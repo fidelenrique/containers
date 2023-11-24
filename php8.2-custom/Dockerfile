@@ -1,4 +1,4 @@
-FROM php:8.0-fpm
+FROM php:8.2-fpm
 ARG TIMEZONE=Europe/Paris
 
 MAINTAINER Fidel REYES <freyesllerena33@gmail.com>
@@ -57,27 +57,29 @@ RUN install-php-extensions \
     amqp \
     redis
 
-RUN wget https://github.com/wkhtmltopdf/wkhtmltopdf/releases/download/0.12.5/wkhtmltox_0.12.5-1.stretch_amd64.deb \
- && dpkg -i wkhtmltox_0.12.5-1.stretch_amd64.deb \
- && apt install -y -f \
- && rm wkhtmltox_0.12.5-1.stretch_amd64.deb
+## interface PDF not working
+#RUN wget https://github.com/wkhtmltopdf/wkhtmltopdf/releases/download/0.12.5/wkhtmltox_0.12.5-1.stretch_amd64.deb \
+# && dpkg -i wkhtmltox_0.12.5-1.stretch_amd64.deb \
+# && apt install -y -f \
+# && rm wkhtmltox_0.12.5-1.stretch_amd64.deb
 
 # Composer 1
 RUN php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
 RUN php composer-setup.php --version=1.10.26
 RUN php -r "unlink('composer-setup.php');"
-RUN mv composer.phar /usr/local/bin/composer
+RUN mv composer.phar /usr/local/bin/composer1
 
 # Composer 2
 RUN php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
 RUN php composer-setup.php --version=2.4.1
 RUN php -r "unlink('composer-setup.php');"
-RUN mv composer.phar /usr/local/bin/composer2
+RUN mv composer.phar /usr/local/bin/composer
 
 RUN wget https://get.symfony.com/cli/installer -O - | bash
 RUN curl -1sLf 'https://dl.cloudsmith.io/public/symfony/stable/setup.deb.sh' | bash
 RUN apt update && apt install symfony-cli -y
 
 RUN apt install git -y
+RUN apt -y install make
 
 WORKDIR /var/www
