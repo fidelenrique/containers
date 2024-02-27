@@ -30,6 +30,8 @@ RUN mkdir -p /usr/share/man/man1 && \
     fontconfig \
     build-essential \
     libmagickwand-dev \
+    zip \
+    unzip \
     && apt-get clean all
 
 RUN pecl install imagick \
