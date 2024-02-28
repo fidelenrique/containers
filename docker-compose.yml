@@ -2,16 +2,19 @@ version: '3.9'
 services:
     nginx:
         build: nginx
+        container_name: nginx
         ports:
             - ${NGNIX_PORT}:80
         depends_on:
             - php7.4-fpm
             - php8.2-fpm
             - php8.1-fpm
+            - phpmyadmin
         links:
             - php7.4-fpm
             - php8.2-fpm
             - php8.1-fpm
+            - phpmyadmin
         volumes:
             - './nginx/vhosts/:/etc/nginx/conf.d/'
             - ${DOCKER_VOLUME_PATH}:/var/www
@@ -24,6 +27,7 @@ services:
 
     php7.4-fpm:
         build: php7.4-custom
+        container_name: php7.4
         extra_hosts:
             - "mail:172.16.238.17"
         volumes:
@@ -41,6 +45,7 @@ services:
 
     php8.2-fpm:
         build: php8.2-custom
+        container_name: php8.2
         extra_hosts:
             - "mail:172.16.238.17"
         volumes:
@@ -57,6 +62,7 @@ services:
 
     php8.1-fpm:
         build: php8.1-custom
+        container_name: php8.1
         extra_hosts:
             - "mail:172.16.238.17"
         volumes:
@@ -75,6 +81,7 @@ services:
 
     db:
         image: mariadb
+        container_name: mariadb
         command: ["--default-authentication-plugin=mysql_native_password"]
         ports:
             - ${DB_PORT}:3306
@@ -104,6 +111,7 @@ services:
 
     memcached:
         image: memcached:alpine
+        container_name: memcached
         ports:
             - 11212:11212
         networks:
@@ -114,6 +122,7 @@ services:
 
     tools:
         build: tools
+        container_name: tools
         extra_hosts:
             - "mail:172.16.238.17"
         environment:
@@ -134,6 +143,7 @@ services:
     # Mailer : configure smtp with MAILER_DSN=smtp://mail:1025 and open browser on 8025
     mail:
         image: mailhog/mailhog
+        container_name: mail
         networks:
             fidel_net:
                 ipv4_address: 172.16.238.17
@@ -147,15 +157,18 @@ services:
     # http://127.0.0.1:8088/index.php?route=/&route=%2F
     phpmyadmin:
         image: phpmyadmin/phpmyadmin
+        container_name: phpmyadmin
         ports:
             - "8088:80"
         restart: always
         environment:
             - PMA_HOST=db
+            - PMA_PORT=3306
+            - MYSQL_ROOT_PASSWORD=root
             - MEMORY_LIMIT=2G
             - UPLOAD_LIMIT=2G
-        depends_on:
-          - nginx
+#        depends_on:
+#          - nginx
         networks:
             fidel_net:
                 ipv4_address: 172.16.238.18
