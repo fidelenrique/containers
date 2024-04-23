@@ -8,10 +8,12 @@ services:
         depends_on:
             - php8.2-fpm
             - php8.1-fpm
+            - php7.0-fpm
             - phpmyadmin
         links:
             - php8.2-fpm
             - php8.1-fpm
+            - php7.0-fpm
             - phpmyadmin
         volumes:
             - './nginx/vhosts/:/etc/nginx/conf.d/'
@@ -59,7 +61,27 @@ services:
                 ipv6_address: 2001:3984:3989::12
         restart: always
 
+    php7.0-fpm:
+        build: php7.0-custom
+        container_name: php7.0-fpm
+        extra_hosts:
+            - "mail:172.16.238.16"
+        volumes:
+            - ${DOCKER_VOLUME_PATH}:/var/www
+            #            - /mnt/mmnas/files/:/mnt/mmnas/files/
+            - ${SSH_PATH}:/root/.ssh/
+            - ./tools/php7.0/php.ini:/usr/local/etc/php/php.ini-development
+        depends_on:
+            - mariadb
+        #            - redis
+        networks:
+            fidel_net:
+                ipv4_address: 172.16.238.18
+                ipv6_address: 2001:3984:3989::18
+        restart: always
+
     mariadb:
+        build: mariadb
         image: mariadb
         container_name: mariadb
         command: ["--default-authentication-plugin=mysql_native_password"]
@@ -72,6 +94,7 @@ services:
             MYSQL_PASSWORD: symfony
         volumes:
             - db-volume:/var/lib/mysql
+            - config-volume:/etc/mysql/conf.d
             - ${DOCKER_VOLUME_PATH}:/var/www
         networks:
             fidel_net:

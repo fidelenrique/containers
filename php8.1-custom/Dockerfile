@@ -65,11 +65,8 @@ RUN install-php-extensions \
 # && apt install -y -f \
 # && rm wkhtmltox_0.12.5-1.stretch_amd64.deb
 
-# Composer 1
-RUN php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
-RUN php composer-setup.php --version=1.10.26
-RUN php -r "unlink('composer-setup.php');"
-RUN mv composer.phar /usr/local/bin/composer1
+
+
 
 # Composer 2
 RUN php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
