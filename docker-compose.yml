@@ -9,12 +9,18 @@ services:
             - php8.2-fpm
             - php8.1-fpm
             - php7.0-fpm
+            - php7.2-fpm
             - phpmyadmin
+            - phpmyadmin_mdb70
+            - phpmyadmin_mdb72
         links:
             - php8.2-fpm
             - php8.1-fpm
             - php7.0-fpm
+            - php7.2-fpm
             - phpmyadmin
+            - phpmyadmin_mdb70
+            - phpmyadmin_mdb72
         volumes:
             - './nginx/vhosts/:/etc/nginx/conf.d/'
             - ${DOCKER_VOLUME_PATH}:/var/www
@@ -35,7 +41,7 @@ services:
             - ${SSH_PATH}:/root/.ssh/
             - ./tools/php8.2/php.ini:/usr/local/etc/php/php.ini-development
         depends_on:
-            - mariadb
+            - mysql
         networks:
             fidel_net:
                 ipv4_address: 172.16.238.11
@@ -49,12 +55,10 @@ services:
             - "mail:172.16.238.16"
         volumes:
             - ${DOCKER_VOLUME_PATH}:/var/www
-#            - /mnt/mmnas/files/:/mnt/mmnas/files/
             - ${SSH_PATH}:/root/.ssh/
             - ./tools/php8.1/php.ini:/usr/local/etc/php/php.ini-development
         depends_on:
-            - mariadb
-#            - redis
+            - mysql
         networks:
             fidel_net:
                 ipv4_address: 172.16.238.12
@@ -68,49 +72,112 @@ services:
             - "mail:172.16.238.16"
         volumes:
             - ${DOCKER_VOLUME_PATH}:/var/www
-            #            - /mnt/mmnas/files/:/mnt/mmnas/files/
             - ${SSH_PATH}:/root/.ssh/
             - ./tools/php7.0/php.ini:/usr/local/etc/php/php.ini-development
         depends_on:
-            - mariadb
-        #            - redis
+            - mariadb-php7.0
         networks:
             fidel_net:
                 ipv4_address: 172.16.238.18
                 ipv6_address: 2001:3984:3989::18
         restart: always
 
-    mariadb:
-        build: mariadb
-        image: mariadb
-        container_name: mariadb
+    php7.2-fpm:
+        build: php7.2-custom
+        container_name: php7.2-fpm
+        extra_hosts:
+            - "mail:172.16.238.16"
+        volumes:
+            - ${DOCKER_VOLUME_PATH}:/var/www
+            - ${SSH_PATH}:/root/.ssh/
+            - ./tools/php7.2/php.ini:/usr/local/etc/php/php.ini-development
+        depends_on:
+            - mariadb-php7.2
+        networks:
+            fidel_net:
+                ipv4_address: 172.16.238.19
+                ipv6_address: 2001:3984:3989::19
+        restart: always
+
+#    mariadb:
+#        build: mariadb
+#        image: mariadb
+#        container_name: mariadb
+#        command: ["--default-authentication-plugin=mysql_native_password"]
+#        ports:
+#            - "3307:3307"
+#        environment:
+#            MYSQL_ROOT_PASSWORD: root
+#            MYSQL_DATABASE: hub
+#            MYSQL_USER: symfony
+#            MYSQL_PASSWORD: symfony
+#        volumes:
+#            - db-volume:/var/lib/mysql
+#            - config-volume:/etc/mysql/conf.d
+#            - ${DOCKER_VOLUME_PATH}:/var/www
+#        networks:
+#            fidel_net:
+#                ipv4_address: 172.16.238.20
+#                ipv6_address: 2001:3984:3989::20
+#        restart: always
+
+    mariadb-php7.0:
+        image: mariadb:10.3
+        container_name: mariadb-php7.0
         command: ["--default-authentication-plugin=mysql_native_password"]
         ports:
-            - ${DB_PORT}:3306
+            - "3307:3306"
         environment:
             MYSQL_ROOT_PASSWORD: root
-            MYSQL_DATABASE: hub
-            MYSQL_USER: symfony
-            MYSQL_PASSWORD: symfony
+#            MYSQL_DATABASE: gestionbrevets
+#            MYSQL_USER: test
+#            MYSQL_PASSWORD: test
         volumes:
-            - db-volume:/var/lib/mysql
-            - config-volume:/etc/mysql/conf.d
+            - mariadb-data_php70:/var/lib/mysql
+            - config-volume_php70:/etc/mysql/conf.d
+            - ${DOCKER_VOLUME_PATH}:/var/www
+        networks:
+            fidel_net:
+                ipv4_address: 172.16.238.20
+                ipv6_address: 2001:3984:3989::20
+        restart: always
+
+    mariadb-php7.2:
+        image: mariadb:10.5
+        container_name: mariadb-php7.2
+        environment:
+            MYSQL_ROOT_PASSWORD: root
+#            MYSQL_DATABASE: symfony34
+#            MYSQL_USER: symfony34
+#            MYSQL_PASSWORD: symfony34
+        ports:
+            - "3308:3306"
+        volumes:
+            - mariadb-data_php72:/var/lib/mysql
+            - config-volume_php72:/etc/mysql/conf.d
+            - ${DOCKER_VOLUME_PATH}:/var/www
+        networks:
+            fidel_net:
+                ipv4_address: 172.16.238.21
+                ipv6_address: 2001:3984:3989::21
+        restart: always
+
+    mysql:
+        image: mysql:latest
+        container_name: mysql
+        environment:
+            MYSQL_ROOT_PASSWORD: root
+            MYSQL_DATABASE: gestionbrevets_dev
+        ports:
+            - "3306:3306"
+        volumes:
+            - mysql_data:/var/lib/mysql
             - ${DOCKER_VOLUME_PATH}:/var/www
         networks:
             fidel_net:
                 ipv4_address: 172.16.238.13
                 ipv6_address: 2001:3984:3989::13
         restart: always
-
-#    redis:
-#        image: redis:alpine
-#        ports:
-#            - ${REDIS_PORT}:6379
-#        networks:
-#            fidel_net:
-#                ipv4_address: 172.16.238.--
-#                ipv6_address: 2001:3984:3989::--
-#        restart: always
 
     memcached:
         image: memcached:alpine
@@ -166,7 +233,7 @@ services:
             - "8088:80"
         restart: always
         environment:
-            - PMA_HOST=mariadb
+            - PMA_HOST=mysql
             - PMA_PORT=3306
             - MYSQL_ROOT_PASSWORD=root
             - MEMORY_LIMIT=2G
@@ -175,6 +242,42 @@ services:
             fidel_net:
                 ipv4_address: 172.16.238.17
                 ipv6_address: 2001:3984:3989::17
+
+    # Uncomment if you want to use PHPMYADMIN root root
+    # http://phpmyadmin_mdb70.localhost:8089/index.php?route=/&route=%2F
+    phpmyadmin_mdb70:
+        image: phpmyadmin/phpmyadmin
+        container_name: phpmyadmin_mdb70
+        ports:
+            - "8089:80"
+        restart: always
+        environment:
+            - PMA_HOST=mariadb-php7.0
+            - MYSQL_ROOT_PASSWORD=root
+            - MEMORY_LIMIT=2G
+            - UPLOAD_LIMIT=2G
+        networks:
+            fidel_net:
+                ipv4_address: 172.16.238.22
+                ipv6_address: 2001:3984:3989::22
+
+    # Uncomment if you want to use PHPMYADMIN root root
+    # http://phpmyadmin_mdb72.localhost:8090/index.php?route=/&route=%2F
+    phpmyadmin_mdb72:
+        image: phpmyadmin/phpmyadmin
+        container_name: phpmyadmin_mdb72
+        ports:
+            - "8090:80"
+        restart: always
+        environment:
+            - PMA_HOST=mariadb-php7.2
+            - MYSQL_ROOT_PASSWORD=root
+            - MEMORY_LIMIT=2G
+            - UPLOAD_LIMIT=2G
+        networks:
+            fidel_net:
+                ipv4_address: 172.16.238.23
+                ipv6_address: 2001:3984:3989::23
 
 #    angular-app:
 #        image: node:14
@@ -198,7 +301,12 @@ networks:
                 - subnet: "2001:3984:3989::/64"
 
 volumes:
-    db-volume:
-    config-volume:
-#     es-volume:#    graylog-config-volume:
+    mariadb-data_php70:
+    db-volume_php70:
+    mariadb-data_php72:
+    db-volume_php72:
+    config-volume_php70:
+    config-volume_php72:
+    mysql_data:
+#     es-volume:#    graylog-config-volume_php70:
 #    graylog-journal-volume:
