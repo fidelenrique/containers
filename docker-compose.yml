@@ -220,8 +220,8 @@ services:
                 ipv4_address: 172.16.238.16
                 ipv6_address: 2001:3984:3989::16
         ports:
-            - "1025:1025"
-            - "8025:8025"
+            - "1025:1025" #SMTP
+            - "8025:8025" #Boite mail
         restart: always
 
     # Uncomment if you want to use PHPMYADMIN root root
